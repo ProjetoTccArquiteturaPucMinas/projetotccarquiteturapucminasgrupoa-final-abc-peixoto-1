@@ -1,0 +1,1 @@
+# Usar codigo no [PlanUML](https://editor.plantuml.com/)

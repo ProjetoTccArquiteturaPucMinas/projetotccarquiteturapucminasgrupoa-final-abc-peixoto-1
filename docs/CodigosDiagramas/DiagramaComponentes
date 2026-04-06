@@ -1,0 +1,74 @@
+@startuml
+!define LIGHTBLUE #E3F2FD
+!define LIGHTORANGE #FFF3E0
+!define LIGHTPURPLE #F3E5F5
+!define LIGHTGREEN #E8F5E9
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 100
+
+title Diagrama de Componentes - Sistema de Cálculo de Descontos
+
+package "Camada de Apresentação" LIGHTBLUE {
+  component "HomeController" as HC <<@Controller>>
+  component "CarrinhoController" as CC <<@Controller>>
+  component "Interface Web" as UI <<Thymeleaf>>
+}
+
+package "Camada de Serviço" LIGHTORANGE {
+  component "ServicoProduto" as PS <<@Service>>
+  component "ServicoCarrinho" as CS <<@Service>>
+}
+
+package "Camada de Persistência" LIGHTPURPLE {
+  interface "ProdutoRepository" as PR
+  component "ProdutoEmMemoriaRepository" as IMPR <<@Repository>>
+}
+
+package "Camada de Modelo" LIGHTGREEN {
+  component "Produto" as P
+  component "CategoriaProduto" as PC <<enum>>
+  component "SelecaoCarrinho" as CSel
+  component "ItemCarrinho" as CI
+  component "ResumoCarrinho" as CSummary
+}
+
+' Relacionamentos Camada de Apresentação
+UI --> HC : GET /
+UI --> CC : POST /cart/summary
+
+' Relacionamentos entre Controllers e Services
+HC --> PS : listarTodos()
+CC --> CS : construirResumo()
+CC --> PS : listarTodos()
+
+' Relacionamentos entre Services e Repository
+PS --> PR : buscarTodos()
+CS --> PR : buscarPorId()
+
+' Implementação da Interface
+IMPR ..|> PR
+
+' Services utilizando Model
+PS ..> P
+CS ..> P
+CS ..> CSel
+CS ..> CI
+CS ..> CSummary
+
+' Controllers utilizando Model
+CC ..> CSel
+CC ..> CSummary
+HC ..> P
+
+' Relacionamentos internos do Model
+CI --> P
+CSel ..> P
+CSummary *-- CI
+P --> PC
+IMPR ..> P
+
+@enduml

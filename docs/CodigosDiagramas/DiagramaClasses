@@ -1,0 +1,204 @@
+@startuml
+' ============================================
+' CONFIGURAÇÕES VISUAIS
+' ============================================
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 100
+skinparam ranksep 100
+skinparam packageStyle rectangle
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontSize 11
+
+' Cores por camada
+skinparam package<<apresentacao>> {
+  BackgroundColor #E3F2FD
+  BorderColor #1976D2
+}
+
+skinparam package<<servico>> {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+}
+
+skinparam package<<persistencia>> {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+}
+
+skinparam package<<modelo>> {
+  BackgroundColor #E8F5E9
+  BorderColor #388E3C
+}
+
+title Sistema de Cálculo de Descontos - Marketplace
+
+' ============================================
+' CAMADA DE APRESENTAÇÃO
+' ============================================
+package "Camada de Apresentação" <<apresentacao>> {
+  
+  class HomeController <<@Controller>> {
+    - servicoProduto: ServicoProduto
+    ____
+    + HomeController(servicoProduto: ServicoProduto)
+    ____
+    + index(modelo: Model): String
+  }
+
+  class CarrinhoController <<@Controller>> {
+    - servicoCarrinho: ServicoCarrinho
+    - servicoProduto: ServicoProduto
+    ____
+    + CarrinhoController(servicoCarrinho: ServicoCarrinho,\n    servicoProduto: ServicoProduto)
+    ____
+    + calcularResumo(idsProdutos: List<Long>,\n    quantidades: List<Integer>,\n    modelo: Model): String
+  }
+}
+
+' ============================================
+' CAMADA DE SERVIÇO
+' ============================================
+package "Camada de Serviço" <<servico>> {
+  
+  class ServicoProduto <<@Service>> {
+    - repositorioProduto: ProdutoRepository
+    ____
+    + ServicoProduto(repositorioProduto: ProdutoRepository)
+    ____
+    + listarTodos(): List<Produto>
+  }
+
+  class ServicoCarrinho <<@Service>> {
+    - repositorioProduto: ProdutoRepository
+    ____
+    + ServicoCarrinho(repositorioProduto: ProdutoRepository)
+    ____
+    + construirResumo(selecoes: List<SelecaoCarrinho>): ResumoCarrinho
+  }
+}
+
+' ============================================
+' CAMADA DE PERSISTÊNCIA
+' ============================================
+package "Camada de Persistência" <<persistencia>> {
+  
+  interface ProdutoRepository <<interface>> {
+    + buscarTodos(): List<Produto>
+    + buscarPorId(id: Long): Optional<Produto>
+  }
+
+  class ProdutoEmMemoriaRepository <<@Repository>> {
+    - produtos: List<Produto>
+    ____
+    + ProdutoEmMemoriaRepository()
+    ____
+    + buscarTodos(): List<Produto>
+    + buscarPorId(id: Long): Optional<Produto>
+  }
+}
+
+' ============================================
+' CAMADA DE MODELO
+' ============================================
+package "Camada de Modelo" <<modelo>> {
+  
+  class Produto {
+    - id: Long
+    - nome: String
+    - preco: BigDecimal
+    - categoria: CategoriaProduto
+    ____
+    + Produto(id: Long, nome: String,\n    preco: BigDecimal, categoria: CategoriaProduto)
+    ____
+    + getId(): Long
+    + getNome(): String
+    + getPreco(): BigDecimal
+    + getCategoria(): CategoriaProduto
+  }
+
+  enum CategoriaProduto {
+    CAPINHA
+    CARREGADOR
+    FONE
+    PELICULA
+    SUPORTE
+  }
+
+  class SelecaoCarrinho {
+    - produtoId: Long
+    - quantidade: Integer
+    ____
+    + SelecaoCarrinho()
+    + SelecaoCarrinho(produtoId: Long, quantidade: Integer)
+    ____
+    + getProdutoId(): Long
+    + setProdutoId(produtoId: Long): void
+    + getQuantidade(): Integer
+    + setQuantidade(quantidade: Integer): void
+  }
+
+  class ItemCarrinho {
+    - produto: Produto
+    - quantidade: int
+    ____
+    + ItemCarrinho(produto: Produto, quantidade: int)
+    ____
+    + calcularSubtotal(): BigDecimal
+    + getProduto(): Produto
+    + getQuantidade(): int
+  }
+
+  class ResumoCarrinho {
+    - itens: List<ItemCarrinho>
+    - subtotal: BigDecimal
+    - percentualDesconto: BigDecimal
+    - valorDesconto: BigDecimal
+    - total: BigDecimal
+    ____
+    + ResumoCarrinho(itens: List<ItemCarrinho>, subtotal: BigDecimal,\n    percentualDesconto: BigDecimal, valorDesconto: BigDecimal,\n    total: BigDecimal)
+    ____
+    + getItens(): List<ItemCarrinho>
+    + getSubtotal(): BigDecimal
+    + getPercentualDesconto(): BigDecimal
+    + getValorDesconto(): BigDecimal
+    + getTotal(): BigDecimal
+  }
+}
+
+' ============================================
+' RELACIONAMENTOS
+' ============================================
+
+' Apresentação -> Serviço
+HomeController --> ServicoProduto
+CarrinhoController --> ServicoCarrinho
+CarrinhoController --> ServicoProduto
+
+' Serviço -> Persistência
+ServicoProduto --> ProdutoRepository
+ServicoCarrinho --> ProdutoRepository
+
+' Persistência -> Modelo
+ProdutoEmMemoriaRepository ..|> ProdutoRepository
+ProdutoEmMemoriaRepository ..> Produto
+
+' Serviço -> Modelo
+ServicoProduto ..> Produto
+ServicoCarrinho ..> Produto
+ServicoCarrinho ..> SelecaoCarrinho
+ServicoCarrinho ..> ItemCarrinho
+ServicoCarrinho ..> ResumoCarrinho
+
+' Controllers -> Modelo
+CarrinhoController ..> SelecaoCarrinho
+CarrinhoController ..> ResumoCarrinho
+
+' Relacionamentos de Modelo
+Produto --> CategoriaProduto
+ItemCarrinho --> Produto
+SelecaoCarrinho ..> Produto
+ResumoCarrinho *-- "0..*" ItemCarrinho
+
+@enduml
