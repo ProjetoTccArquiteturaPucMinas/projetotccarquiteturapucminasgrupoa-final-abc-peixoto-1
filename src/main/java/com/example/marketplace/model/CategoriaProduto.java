@@ -1,9 +1,10 @@
 package com.example.marketplace.model;
 
 public enum CategoriaProduto {
-    CAPINHA,
+    CAPINHA, 
     CARREGADOR,
     FONE,
     PELICULA,
     SUPORTE
 }
+

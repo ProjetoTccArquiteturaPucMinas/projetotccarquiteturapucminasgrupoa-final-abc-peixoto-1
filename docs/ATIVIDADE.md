@@ -5,6 +5,7 @@ Este projeto faz parte de um experimento acadêmico para avaliar esforço de com
 
 ## Sua tarefa
 1. Identificar a arquitetura usada no projeto.
+1.1. Resposta: Monolito modular com arquitetura em camadas e pattern MVC com repository e service.
 2. Justificar com base na estrutura do código.
 3. Identificar a classe que deve ser alterada
 4. Implementar a feature de cálculo de descontos no carrinho.

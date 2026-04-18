@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="pt"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ServicoCarrinho.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">marketplace-discount</a> &gt; <a href="index.source.html" class="el_package">com.example.marketplace.service</a> &gt; <span class="el_source">ServicoCarrinho.java</span></div><h1>ServicoCarrinho.java</h1><pre class="source lang-java linenums">package com.example.marketplace.service;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.example.marketplace.model.CategoriaProduto;
+import com.example.marketplace.model.ItemCarrinho;
+import com.example.marketplace.model.Produto;
+import com.example.marketplace.model.ResumoCarrinho;
+import com.example.marketplace.model.SelecaoCarrinho;
+import com.example.marketplace.repository.ProdutoRepository;
+
+@Service
+public class ServicoCarrinho {
+
+    private final ProdutoRepository repositorioProdutos;
+
+<span class="fc" id="L22">    public ServicoCarrinho(ProdutoRepository repositorioProdutos) {</span>
+<span class="fc" id="L23">        this.repositorioProdutos = repositorioProdutos;</span>
+<span class="fc" id="L24">    }</span>
+
+    public ResumoCarrinho construirResumo(List&lt;SelecaoCarrinho&gt; selecoes) {
+
+<span class="fc" id="L28">        List&lt;ItemCarrinho&gt; itens = new ArrayList&lt;&gt;();</span>
+
+        // =========================
+        // Monta os itens do carrinho
+        // =========================
+<span class="fc bfc" id="L33" title="All 2 branches covered.">        for (SelecaoCarrinho selecao : selecoes) {</span>
+<span class="fc" id="L34">            Produto produto = repositorioProdutos.buscarPorId(selecao.getProdutoId())</span>
+<span class="fc" id="L35">                    .orElseThrow(</span>
+<span class="nc" id="L36">                            () -&gt; new IllegalArgumentException(&quot;Produto não encontrado: &quot; + selecao.getProdutoId()));</span>
+<span class="fc" id="L37">            itens.add(new ItemCarrinho(produto, selecao.getQuantidade()));</span>
+<span class="fc" id="L38">        }</span>
+
+        // =========================
+        // Calcula subtotal
+        // =========================
+<span class="fc" id="L43">        BigDecimal subtotal = itens.stream()</span>
+<span class="fc" id="L44">                .map(ItemCarrinho::calcularSubtotal)</span>
+<span class="fc" id="L45">                .reduce(BigDecimal.ZERO, BigDecimal::add);</span>
+
+        // =========================
+        // Calcula descontos
+        // =========================
+<span class="fc" id="L50">        BigDecimal percentualDesconto = calcularPercentualDesconto(itens);</span>
+<span class="fc" id="L51">        BigDecimal valorDesconto = subtotal.multiply(percentualDesconto).divide(BigDecimal.valueOf(100), RoundingMode.HALF_UP);</span>
+<span class="fc" id="L52">        BigDecimal total = subtotal.subtract(valorDesconto);</span>
+
+<span class="fc" id="L54">        return new ResumoCarrinho(itens, subtotal, percentualDesconto, valorDesconto, total);</span>
+    }
+
+    // =========================
+    // Métodos auxiliares de desconto
+    // =========================
+    private BigDecimal calcularPercentualDesconto(List&lt;ItemCarrinho&gt; itens) {
+<span class="fc" id="L61">        BigDecimal desconto = BigDecimal.ZERO;</span>
+
+        // 1. Desconto por quantidade total de itens
+<span class="fc" id="L64">        int totalItens = itens.stream().mapToInt(ItemCarrinho::getQuantidade).sum();</span>
+<span class="fc" id="L65">        desconto = desconto.add(obterDescontoQuantidade(totalItens));</span>
+
+        // 2. Desconto por categoria (aplicado por item)
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        for (ItemCarrinho item : itens) {</span>
+<span class="fc" id="L69">            BigDecimal descontoCategoria = obterDescontoCategoria(item.getProduto().getCategoria());</span>
+<span class="fc" id="L70">            desconto = desconto.add(descontoCategoria);</span>
+<span class="fc" id="L71">        }</span>
+
+<span class="fc" id="L73">        return desconto;</span>
+    }
+
+    private BigDecimal obterDescontoQuantidade(int totalItens) {
+<span class="fc bfc" id="L77" title="All 2 branches covered.">        if (totalItens &gt;= 4) {</span>
+<span class="fc" id="L78">            return BigDecimal.valueOf(10);</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">        } else if (totalItens == 3) {</span>
+<span class="nc" id="L80">            return BigDecimal.valueOf(7);</span>
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        } else if (totalItens == 2) {</span>
+<span class="fc" id="L82">            return BigDecimal.valueOf(5);</span>
+        }
+<span class="fc" id="L84">        return BigDecimal.ZERO;</span>
+    }
+
+    private BigDecimal obterDescontoCategoria(CategoriaProduto categoria) {
+<span class="pc bpc" id="L88" title="1 of 2 branches missed.">        if (categoria == null) {</span>
+<span class="nc" id="L89">            return BigDecimal.ZERO;</span>
+        }
+
+<span class="fc bfc" id="L92" title="All 5 branches covered.">        return switch (categoria) {</span>
+<span class="fc" id="L93">            case CAPINHA -&gt; BigDecimal.valueOf(3);</span>
+<span class="fc" id="L94">            case CARREGADOR -&gt; BigDecimal.valueOf(5);</span>
+<span class="fc" id="L95">            case FONE -&gt; BigDecimal.valueOf(3);</span>
+<span class="fc" id="L96">            case PELICULA -&gt; BigDecimal.valueOf(2);</span>
+<span class="fc" id="L97">            case SUPORTE -&gt; BigDecimal.valueOf(2);</span>
+        };
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
